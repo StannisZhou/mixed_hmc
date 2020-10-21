@@ -8,6 +8,7 @@ import sacred
 from momentum.diagnostics.ess import get_min_ess
 from momentum.variable_selection.dhmc import draw_samples_dhmc
 from momentum.variable_selection.gibbs import draw_samples_gibbs
+from momentum.variable_selection.hmc_within_gibbs import draw_samples_hmc_within_gibbs
 from momentum.variable_selection.mixed_hmc import draw_samples_mixed_hmc
 from momentum.variable_selection.pymc3 import draw_samples_pymc3
 from sacred.observers import FileStorageObserver
@@ -29,6 +30,7 @@ def config():
     n_discrete_to_update = 1
     n_chains = 192
     data_fname = 'simulated_data.joblib'
+    use_efficient_proposal = True
 
 
 @ex.main
@@ -43,6 +45,7 @@ def run(
     n_discrete_to_update,
     n_chains,
     data_fname,
+    use_efficient_proposal,
 ):
     # Generate temp folder
     temp_folder = tempfile.TemporaryDirectory()
@@ -54,7 +57,11 @@ def run(
     if method == 'gibbs':
         output = joblib.Parallel(n_jobs=joblib.cpu_count())(
             joblib.delayed(draw_samples_gibbs)(
-                n_warm_up_samples + n_samples, X, y, sigma
+                n_warm_up_samples + n_samples,
+                X,
+                y,
+                sigma,
+                use_efficient_proposal=use_efficient_proposal,
             )
             for _ in range(n_chains)
         )
@@ -111,6 +118,47 @@ def run(
                 L=L,
                 n_discrete_to_update=n_discrete_to_update,
                 progbar=False,
+            )
+            for _ in range(n_chains)
+        )
+        gamma_samples, beta_samples, accept_array = list(zip(*output))
+        gamma_samples, beta_samples, accept_array = (
+            np.stack(gamma_samples),
+            np.stack(beta_samples),
+            np.stack(accept_array),
+        )
+        acceptance_rate = np.mean(accept_array, axis=1)
+        print(
+            'Filtering out {} pathological chains'.format(
+                np.sum(acceptance_rate <= 0.4)
+            )
+        )
+        gamma_samples, beta_samples, accept_array = (
+            gamma_samples[acceptance_rate > 0.4],
+            beta_samples[acceptance_rate > 0.4],
+            accept_array[acceptance_rate > 0.4],
+        )
+        print(np.mean(accept_array))
+        results = {
+            'beta': beta_samples,
+            'gamma': gamma_samples,
+            'accept_array': accept_array,
+            'n_warm_up_samples': n_warm_up_samples,
+        }
+        for method in ['mean', 'bulk', 'tail']:
+            print(
+                'Min ess {}: '.format(method),
+                get_min_ess(beta_samples[:, n_warm_up_samples:], method=method),
+            )
+    elif method == 'hmc_within_gibbs':
+        output = joblib.Parallel(n_jobs=joblib.cpu_count())(
+            joblib.delayed(draw_samples_hmc_within_gibbs)(
+                n_samples=n_warm_up_samples + n_samples,
+                X=X,
+                y=y,
+                sigma=sigma,
+                epsilon=epsilon,
+                L=L,
             )
             for _ in range(n_chains)
         )
@@ -282,3 +330,11 @@ for epsilon in [
     ]:
         print('Working on DHMC, epsilon {}, L {}'.format(epsilon, L))
         ex.run(config_updates={'method': 'dhmc', 'epsilon': epsilon, 'L': L})
+
+# HMC-within-Gibbs experiments
+for epsilon in [0.04, 0.06, 0.08, 0.10, 0.12, 0.14]:
+    for L in [40, 60, 80, 100, 120, 140, 160, 180]:
+        print('Working on HMC-within-Gibbs, epsilon {}, L {}'.format(epsilon, L))
+        ex.run(
+            config_updates={'method': 'hmc_within_gibbs', 'epsilon': epsilon, 'L': L}
+        )

@@ -9,6 +9,7 @@ import joblib
 import sacred
 from momentum.simple_gmm.dhmc import draw_samples_dhmc
 from momentum.simple_gmm.exact import draw_samples_exact
+from momentum.simple_gmm.hmc_within_gibbs import draw_samples_hmc_within_gibbs
 from momentum.simple_gmm.mixed_hmc import draw_samples_mixed_hmc
 from momentum.simple_gmm.nuts import draw_samples_nuts
 from momentum.simple_gmm.pymc3 import draw_samples_pymc3
@@ -91,6 +92,21 @@ def run(
         )
         print(np.mean(accept_array))
         results = {'z': z_samples, 'x': x_samples, 'accept_array': accept_array}
+    elif method == 'hmc_within_gibbs':
+        output = joblib.Parallel(n_jobs=joblib.cpu_count())(
+            joblib.delayed(draw_samples_hmc_within_gibbs)(
+                n_warm_up_samples + n_samples, pi, mu_list, Sigma_list, epsilon, L
+            )
+            for _ in range(n_chains)
+        )
+        z_samples, x_samples, accept_array = list(zip(*output))
+        z_samples, x_samples, accept_array = (
+            np.stack(z_samples),
+            np.stack(x_samples),
+            np.stack(accept_array),
+        )
+        print(np.mean(accept_array))
+        results = {'z': z_samples, 'x': x_samples, 'accept_array': accept_array}
     elif method == 'dhmc':
         output = joblib.Parallel(n_jobs=joblib.cpu_count())(
             joblib.delayed(draw_samples_dhmc)(
@@ -146,7 +162,7 @@ def run(
     temp_folder.cleanup()
 
 
-# Experiments for 1D GMM
+# Experiments for 24D GMM
 ## NUTS experiments
 ex.run(config_updates={'method': 'nuts'})
 ## Mixed HMC experiments
@@ -164,3 +180,10 @@ ex.run(config_updates={'method': 'pymc3'})
 for epsilon in [[0.8, 1.0], [1.0, 1.2], [1.2, 1.4], [1.4, 1.6], [1.6, 1.8]]:
     for L in [[20, 30], [30, 40], [40, 50], [50, 60], [60, 70], [70, 80], [80, 90]]:
         ex.run(config_updates={'method': 'dhmc', 'epsilon': epsilon, 'L': L})
+
+## HMC-within-Gibbs experiments
+for epsilon in [0.9, 1.1, 1.3, 1.5, 1.7, 1.9]:
+    for L in [30, 40, 50, 60, 70, 80, 90, 100]:
+        ex.run(
+            config_updates={'method': 'hmc_within_gibbs', 'epsilon': epsilon, 'L': L}
+        )

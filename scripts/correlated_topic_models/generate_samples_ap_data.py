@@ -7,6 +7,9 @@ import joblib
 import sacred
 from momentum.correlated_topic_models.dhmc import draw_samples_dhmc
 from momentum.correlated_topic_models.gibbs import draw_samples_gibbs
+from momentum.correlated_topic_models.hmc_within_gibbs import (
+    draw_samples_hmc_within_gibbs,
+)
 from momentum.correlated_topic_models.mixed_hmc import draw_samples_mixed_hmc
 from momentum.correlated_topic_models.pymc3 import draw_samples_pymc3
 from momentum.diagnostics.ess import get_min_ess
@@ -32,6 +35,7 @@ def config():
     n_short_to_exclude = 20
     n_long_to_exclude = 400
     n_documents = 20
+    use_efficient_proposal = True
 
 
 @ex.main
@@ -48,6 +52,7 @@ def run(
     L,
     total_travel_time,
     n_discrete_to_update,
+    use_efficient_proposal,
 ):
     # Generate temp folder
     temp_folder = tempfile.TemporaryDirectory()
@@ -81,7 +86,12 @@ def run(
         if method == 'gibbs':
             output = joblib.Parallel(n_jobs=joblib.cpu_count())(
                 joblib.delayed(draw_samples_gibbs)(
-                    n_warm_up_samples + n_samples, documents[ind], mu, Sigma, beta
+                    n_warm_up_samples + n_samples,
+                    documents[ind],
+                    mu,
+                    Sigma,
+                    beta,
+                    use_efficient_proposal=use_efficient_proposal,
                 )
                 for _ in range(n_chains)
             )
@@ -197,6 +207,55 @@ def run(
                     'Min ess {}: '.format(ess_method),
                     get_min_ess(eta_samples[:, n_warm_up_samples:], method=ess_method),
                 )
+        elif method == 'hmc_within_gibbs':
+            output = joblib.Parallel(n_jobs=joblib.cpu_count())(
+                joblib.delayed(draw_samples_hmc_within_gibbs)(
+                    n_samples=n_warm_up_samples + n_samples,
+                    w=documents[ind],
+                    mu=mu,
+                    Sigma=Sigma,
+                    beta=beta,
+                    epsilon=epsilon,
+                    L=L,
+                )
+                for _ in range(n_chains)
+            )
+            z_samples, eta_samples, accept_array = list(zip(*output))
+            z_samples, eta_samples, accept_array = (
+                np.stack(z_samples),
+                np.stack(eta_samples),
+                np.stack(accept_array),
+            )
+            acceptance_rate = np.mean(accept_array, axis=1)
+            print(
+                'Filtering out {} pathological chains'.format(
+                    np.sum(acceptance_rate <= 0.4)
+                )
+            )
+            z_samples, eta_samples, accept_array = (
+                z_samples[acceptance_rate > 0.4],
+                eta_samples[acceptance_rate > 0.4],
+                accept_array[acceptance_rate > 0.4],
+            )
+            print(np.mean(accept_array))
+            results = {
+                'eta': eta_samples,
+                'z': z_samples,
+                'accept_array': accept_array,
+                'n_warm_up_samples': n_warm_up_samples,
+            }
+            print(
+                'Mean: {}'.format(
+                    np.mean(
+                        eta_samples[:, n_warm_up_samples:].reshape((-1, K - 1)), axis=0
+                    )
+                )
+            )
+            for ess_method in ['mean', 'bulk', 'tail']:
+                print(
+                    'Min ess {}: '.format(ess_method),
+                    get_min_ess(eta_samples[:, n_warm_up_samples:], method=ess_method),
+                )
         elif method == 'dhmc':
             adaptive_step_size = np.array(np.diag(Sigma))
             adaptive_step_size /= np.sum(adaptive_step_size)
@@ -266,3 +325,10 @@ ex.run(config_updates={'method': 'gibbs'})
 ex.run(config_updates={'method': 'pymc3'})
 # mixed HMC experiments
 ex.run(config_updates={'method': 'mixed_hmc'})
+# HMC-within-Gibbs experiments
+for epsilon in [0.1, 0.2, 0.3]:
+    for L in [400, 500, 600, 700, 800]:
+        print('Working on hmc_within_gibbs, epsilon: {}, L: {}'.format(epsilon, L))
+        ex.run(
+            config_updates={'method': 'hmc_within_gibbs', 'epsilon': epsilon, 'L': L}
+        )

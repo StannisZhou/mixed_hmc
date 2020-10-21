@@ -1,12 +1,12 @@
-import numba
 import numpy as np
-from tqdm import tqdm
 
+import numba
 from momentum.potential.correlated_topic_models import potential, softmax
 from pypolyagamma import PyPolyaGamma
+from tqdm import tqdm
 
 
-def draw_samples_gibbs(n_samples, w, mu, Sigma, beta):
+def draw_samples_gibbs(n_samples, w, mu, Sigma, beta, use_efficient_proposal=False):
     K, V = beta.shape
     N = w.shape[0]
     Sigma_inv = np.linalg.inv(Sigma)
@@ -18,7 +18,9 @@ def draw_samples_gibbs(n_samples, w, mu, Sigma, beta):
     lbda = np.zeros_like(eta)
     for ii in tqdm(range(n_samples)):
         # Update z
-        z = update_z(z, eta, w, mu, Sigma, beta)
+        z = update_z(
+            z, eta, w, mu, Sigma, beta, use_efficient_proposal=use_efficient_proposal
+        )
         # Update lbda
         eta_full = np.concatenate([np.zeros(1), eta])
         rho = eta_full - np.log(np.sum(np.exp(eta_full)) - np.exp(eta_full))
@@ -32,7 +34,7 @@ def draw_samples_gibbs(n_samples, w, mu, Sigma, beta):
 
 
 @numba.jit(nopython=True, cache=True)
-def update_z(z, eta, w, mu, Sigma, beta):
+def update_z(z, eta, w, mu, Sigma, beta, use_efficient_proposal=False):
     for ind in np.random.permutation(z.shape[0]):
         potential_list = []
         for ii in range(beta.shape[0]):
@@ -41,11 +43,22 @@ def update_z(z, eta, w, mu, Sigma, beta):
             potential_list.append(potential(z_proposal, eta, w, mu, Sigma, beta))
 
         potential_array = np.array(potential_list)
-        proposal_dist = softmax(-potential_array)
+        distribution = softmax(-potential_array)
+        proposal_dist = distribution.copy()
+        if use_efficient_proposal:
+            proposal_dist[z[ind]] = 0
+
         proposal_dist += 1e-12
         proposal_dist /= np.sum(proposal_dist)
         proposal_for_ind = np.argmax(np.random.multinomial(1, proposal_dist))
-        z[ind] = proposal_for_ind
+        if use_efficient_proposal:
+            delta_E = np.log(1 - distribution[proposal_for_ind]) - np.log(
+                1 - distribution[z[ind]]
+            )
+            if np.random.exponential() > delta_E:
+                z[ind] = proposal_for_ind
+        else:
+            z[ind] = proposal_for_ind
 
     return z
 
