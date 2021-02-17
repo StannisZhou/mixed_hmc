@@ -25,7 +25,7 @@ def draw_samples_mixed_hmc(
         n_discrete_to_update=n_discrete_to_update,
         labels_for_discrete=labels_for_discrete,
         potential=potential,
-        mode='GB',
+        mode='RW',
         progbar=False,
     )
     return z_samples, x_samples, accept_array

@@ -20,7 +20,6 @@ def mixed_hmc_on_joint(
     mode='RW',
     progbar=True,
 ):
-    print(mode)
     if total_travel_time is None:
         total_travel_time = epsilon * L
 
@@ -162,6 +161,7 @@ def mixed_hmc_on_joint(
     def momentum_step_for_ind(
         q_discrete, q_continuous, k_discrete, key, labels_for_discrete, ind, mode='RW'
     ):
+        print(mode)
         # Get potential array and distribution
         if mode == 'RW':
             proposal_dist = np.ones(labels_for_discrete[ind].shape[0])
@@ -252,6 +252,7 @@ def mixed_hmc_on_joint(
             L=L,
             labels_for_discrete=labels_for_discrete,
             key=key,
+            mode=mode,
         )
         return q_discrete, q_continuous, accept, key
 

@@ -2,9 +2,8 @@ import numpy as np
 
 import jax
 from momentum.hmc.mixed_hmc_jax import mixed_hmc_on_joint
-from momentum.potential.correlated_topic_models import (
-    generate_correlated_topic_models_potential,
-)
+from momentum.potential.correlated_topic_models import \
+    generate_correlated_topic_models_potential
 from momentum.utils import jax_prng_key
 
 
@@ -18,7 +17,7 @@ def draw_samples_mixed_hmc(
     total_travel_time,
     L,
     n_discrete_to_update,
-    mode='GB',
+    mode='RW',
     progbar=True,
     adaptive_step_size=None,
 ):

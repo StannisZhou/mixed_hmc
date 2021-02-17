@@ -2,7 +2,8 @@ import numpy as np
 
 import jax
 from momentum.hmc.mixed_hmc_jax import mixed_hmc_on_joint
-from momentum.potential.variable_selection import generate_variable_selection_potential
+from momentum.potential.variable_selection import \
+    generate_variable_selection_potential
 from momentum.utils import jax_prng_key
 
 
