@@ -1,6 +1,5 @@
-import numpy as np
-
 import numba
+import numpy as np
 from tqdm import tqdm
 
 
@@ -57,24 +56,23 @@ def naive_mixed_hmc(x0, q0, n_samples, epsilon, L, pi, mu_list, sigma_list, use_
         # Resample momentum
         p0 = np.random.randn()
         k0 = np.random.exponential()
-        # Initialize q, k
+        # Initialize q, k, delta_U
         x = x0
         q = q0
         p = p0
         k = k0
+        delta_U = 0.0
         # Take L steps
         for ii in range(L):
             q, p = leapfrog_step(x=x, q=q, p=p, epsilon=epsilon)
-            x, k = update_discrete(x0=x, k0=k, q=q, n_components=n_components)
+            x, k, delta_U = update_discrete(
+                x0=x, k0=k, q=q, delta_U=delta_U, n_components=n_components
+            )
 
         # Accept or reject
-        current_U = potential(x0, q0)
-        current_K = k0 + 0.5 * p0 ** 2
-        proposed_U = potential(x, q)
-        proposed_K = k + 0.5 * p ** 2
-        accept = np.random.rand() < np.exp(
-            current_U - proposed_U + current_K - proposed_K
-        )
+        current_E = potential(x0, q0) + 0.5 * p0 ** 2
+        proposed_E = potential(x, q) + 0.5 * p ** 2
+        accept = np.random.rand() < np.exp(current_E + delta_U - proposed_E)
         if not accept:
             x, q = x0, q0
 
@@ -88,7 +86,7 @@ def naive_mixed_hmc(x0, q0, n_samples, epsilon, L, pi, mu_list, sigma_list, use_
         return q, p
 
     @numba.jit(nopython=True)
-    def update_discrete(x0, k0, q, n_components):
+    def update_discrete(x0, k0, q, delta_U, n_components):
         x = x0
         k = k0
         distribution = np.ones(n_components)
@@ -101,6 +99,7 @@ def naive_mixed_hmc(x0, q0, n_samples, epsilon, L, pi, mu_list, sigma_list, use_
         if use_k:
             accept = k > delta_E
             if accept:
+                delta_U += potential(x, q) - potential(x0, q)
                 k -= delta_E
             else:
                 x = x0
@@ -110,7 +109,7 @@ def naive_mixed_hmc(x0, q0, n_samples, epsilon, L, pi, mu_list, sigma_list, use_
             if not accept:
                 x = x0
 
-        return x, k
+        return x, k, delta_U
 
     x, q = x0, q0
     x_samples, q_samples, accept_list = [], [], []
