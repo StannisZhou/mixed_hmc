@@ -209,7 +209,6 @@ def mixed_hmc_on_joint(
             proposal_dist = jax.ops.index_update(
                 distribution, jax.ops.index[q_discrete[ind]], 0
             )
-            proposal_dist += 1e-12
             proposal_dist /= np.sum(proposal_dist)
             key, subkey = jax.random.split(key)
             proposal_for_ind = categorical(subkey, proposal_dist)

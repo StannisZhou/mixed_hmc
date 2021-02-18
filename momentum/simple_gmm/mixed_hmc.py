@@ -8,7 +8,7 @@ from momentum.utils import jax_prng_key
 
 
 def draw_samples_mixed_hmc(
-    n_samples, pi, mu_list, Sigma_list, epsilon, L, n_discrete_to_update
+    n_samples, pi, mu_list, Sigma_list, epsilon, L, n_discrete_to_update, mode='RW'
 ):
     potential = generate_simple_gmm_potential(pi, mu_list, Sigma_list)
     z0 = np.array([onp.random.randint(0, pi.shape[0])])
@@ -25,7 +25,7 @@ def draw_samples_mixed_hmc(
         n_discrete_to_update=n_discrete_to_update,
         labels_for_discrete=labels_for_discrete,
         potential=potential,
-        mode='RW',
+        mode=mode,
         progbar=False,
     )
     return z_samples, x_samples, accept_array
