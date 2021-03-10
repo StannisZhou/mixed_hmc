@@ -31,6 +31,7 @@ def config():
     n_chains = 192
     data_fname = 'simulated_data.joblib'
     use_efficient_proposal = True
+    mode = 'RW'
 
 
 @ex.main
@@ -46,6 +47,7 @@ def run(
     n_chains,
     data_fname,
     use_efficient_proposal,
+    mode,
 ):
     # Generate temp folder
     temp_folder = tempfile.TemporaryDirectory()
@@ -118,6 +120,7 @@ def run(
                 L=L,
                 n_discrete_to_update=n_discrete_to_update,
                 progbar=False,
+                mode=mode,
             )
             for _ in range(n_chains)
         )

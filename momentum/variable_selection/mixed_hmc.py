@@ -18,6 +18,7 @@ def draw_samples_mixed_hmc(
     n_discrete_to_update,
     adaptive_step_size=None,
     progbar=True,
+    mode='RW'
 ):
     N, p = X.shape
     potential = generate_variable_selection_potential(X, y, sigma)
@@ -36,7 +37,7 @@ def draw_samples_mixed_hmc(
         n_discrete_to_update=n_discrete_to_update,
         labels_for_discrete=labels_for_discrete,
         potential=potential,
-        mode='RW',
+        mode=mode,
         adaptive_step_size=adaptive_step_size,
         progbar=progbar,
     )

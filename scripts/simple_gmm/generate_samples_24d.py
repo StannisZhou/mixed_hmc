@@ -13,6 +13,7 @@ from momentum.simple_gmm.hmc_within_gibbs import draw_samples_hmc_within_gibbs
 from momentum.simple_gmm.mixed_hmc import draw_samples_mixed_hmc
 from momentum.simple_gmm.nuts import draw_samples_nuts
 from momentum.simple_gmm.pymc3 import draw_samples_pymc3
+from momentum.diagnostics.ess import get_min_ess
 from sacred.observers import FileStorageObserver
 
 log_folder = os.path.expanduser('~/logs/simple_gmm_24d_results')
@@ -32,6 +33,7 @@ def config():
     L = 80
     n_discrete_to_update = 1
     n_chains = 192
+    mode = 'RW'
 
 
 @ex.main
@@ -46,6 +48,7 @@ def run(
     L,
     n_discrete_to_update,
     n_chains,
+    mode,
 ):
     # Generate temp folder
     temp_folder = tempfile.TemporaryDirectory()
@@ -81,6 +84,7 @@ def run(
                 epsilon,
                 L,
                 n_discrete_to_update,
+                mode=mode
             )
             for _ in range(n_chains)
         )
@@ -130,6 +134,7 @@ def run(
     else:
         raise ValueError('Unsupported method {}'.format(method))
 
+    print(get_min_ess(x_samples[:, n_warm_up_samples:]))
     if n_chains == 1:
         x = np.linspace(-10, 10, int(1e4))
         n_components, n_dimensions = mu_list.shape

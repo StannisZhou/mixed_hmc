@@ -30,6 +30,7 @@ def config():
     L = 20
     n_discrete_to_update = 1
     n_chains = 192
+    mode = 'RW'
 
 
 @ex.main
@@ -44,6 +45,7 @@ def run(
     L,
     n_discrete_to_update,
     n_chains,
+    mode,
 ):
     # Generate temp folder
     temp_folder = tempfile.TemporaryDirectory()
@@ -80,6 +82,7 @@ def run(
                 epsilon,
                 L,
                 n_discrete_to_update,
+                mode=mode,
             )
             for _ in range(n_chains)
         )

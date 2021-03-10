@@ -36,6 +36,7 @@ def config():
     n_long_to_exclude = 400
     n_documents = 20
     use_efficient_proposal = True
+    mode = 'RW'
 
 
 @ex.main
@@ -53,6 +54,7 @@ def run(
     total_travel_time,
     n_discrete_to_update,
     use_efficient_proposal,
+    mode,
 ):
     # Generate temp folder
     temp_folder = tempfile.TemporaryDirectory()
@@ -168,6 +170,7 @@ def run(
                     n_discrete_to_update=n_discrete_to_update,
                     progbar=False,
                     adaptive_step_size=adaptive_step_size,
+                    mode=mode,
                 )
                 for _ in range(n_chains)
             )

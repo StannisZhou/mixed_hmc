@@ -285,5 +285,6 @@ def mixed_hmc_on_joint(
 
 
 def softmax(x):
+    x = x - np.max(x)
     expx = np.exp(x)
     return expx / np.sum(expx)
