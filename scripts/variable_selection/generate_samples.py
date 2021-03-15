@@ -8,7 +8,8 @@ import sacred
 from momentum.diagnostics.ess import get_min_ess
 from momentum.variable_selection.dhmc import draw_samples_dhmc
 from momentum.variable_selection.gibbs import draw_samples_gibbs
-from momentum.variable_selection.hmc_within_gibbs import draw_samples_hmc_within_gibbs
+from momentum.variable_selection.hmc_within_gibbs import \
+    draw_samples_hmc_within_gibbs
 from momentum.variable_selection.mixed_hmc import draw_samples_mixed_hmc
 from momentum.variable_selection.pymc3 import draw_samples_pymc3
 from sacred.observers import FileStorageObserver
@@ -282,6 +283,7 @@ for L in [200, 300, 400, 500, 600, 700, 800, 900, 1000]:
                 'L': L,
                 'total_travel_time': total_travel_time,
                 'n_discrete_to_update': 1,
+                'mode': 'gibbs',
             }
         )
 
@@ -307,6 +309,7 @@ for total_travel_time in [30, 40, 50, 60, 70]:
                 'L': L,
                 'total_travel_time': total_travel_time,
                 'n_discrete_to_update': n_discrete_to_update,
+                'mode': 'gibbs',
             }
         )
 

@@ -7,9 +7,8 @@ import joblib
 import sacred
 from momentum.correlated_topic_models.dhmc import draw_samples_dhmc
 from momentum.correlated_topic_models.gibbs import draw_samples_gibbs
-from momentum.correlated_topic_models.hmc_within_gibbs import (
-    draw_samples_hmc_within_gibbs,
-)
+from momentum.correlated_topic_models.hmc_within_gibbs import \
+    draw_samples_hmc_within_gibbs
 from momentum.correlated_topic_models.mixed_hmc import draw_samples_mixed_hmc
 from momentum.correlated_topic_models.pymc3 import draw_samples_pymc3
 from momentum.diagnostics.ess import get_min_ess
@@ -327,7 +326,7 @@ ex.run(config_updates={'method': 'gibbs'})
 # PyMC3 experiments
 ex.run(config_updates={'method': 'pymc3'})
 # mixed HMC experiments
-ex.run(config_updates={'method': 'mixed_hmc'})
+ex.run(config_updates={'method': 'mixed_hmc', 'mode': 'gibbs'})
 # HMC-within-Gibbs experiments
 for epsilon in [0.1, 0.2, 0.3]:
     for L in [400, 500, 600, 700, 800]:

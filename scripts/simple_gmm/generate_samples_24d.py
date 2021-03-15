@@ -2,18 +2,18 @@ import os
 import tempfile
 from itertools import permutations
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 import joblib
+import matplotlib.pyplot as plt
 import sacred
+from momentum.diagnostics.ess import get_min_ess
 from momentum.simple_gmm.dhmc import draw_samples_dhmc
 from momentum.simple_gmm.exact import draw_samples_exact
 from momentum.simple_gmm.hmc_within_gibbs import draw_samples_hmc_within_gibbs
 from momentum.simple_gmm.mixed_hmc import draw_samples_mixed_hmc
 from momentum.simple_gmm.nuts import draw_samples_nuts
 from momentum.simple_gmm.pymc3 import draw_samples_pymc3
-from momentum.diagnostics.ess import get_min_ess
 from sacred.observers import FileStorageObserver
 
 log_folder = os.path.expanduser('~/logs/simple_gmm_24d_results')
@@ -84,7 +84,7 @@ def run(
                 epsilon,
                 L,
                 n_discrete_to_update,
-                mode=mode
+                mode=mode,
             )
             for _ in range(n_chains)
         )
@@ -177,6 +177,7 @@ ex.run(
         'epsilon': 1.7,
         'L': 80,
         'n_discrete_to_update': 1,
+        'mode': 'gibbs',
     }
 )
 ## PyMC3 experiments
