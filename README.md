@@ -1,6 +1,6 @@
 # Introduction
 
-This repo contains code for reproducing the results in the paper [**Mixed Hamiltonian Monte Carlo for Mixed Discrete and Continuous Variables**](https://arxiv.org/abs/1909.04852) at *Neural Information Processing Systems (NeurIPS) 2020*.
+This repo contains code for reproducing the results in the paper [**Mixed Hamiltonian Monte Carlo for Mixed Discrete and Continuous Variables**](https://arxiv.org/abs/1909.04852) at *Neural Information Processing Systems (NeurIPS) 2020*. An alternative implementation is [available within the probabilistic programming language *NumPyro*](http://num.pyro.ai/en/latest/mcmc.html#numpyro.infer.mixed_hmc.MixedHMC).
 
 # Setting up the environment
 
