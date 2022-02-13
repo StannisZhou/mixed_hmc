@@ -1,6 +1,12 @@
+# Updates
+
+See [Metropolis Augmented Hamiltonian Monte Carlo](https://arxiv.org/abs/2201.08044) for a simplified and more general formulation of mixed HMC with Laplace momentum.
+
+An alternative implementation of mixed HMC is [available within the probabilistic programming language *NumPyro*](http://num.pyro.ai/en/latest/mcmc.html#numpyro.infer.mixed_hmc.MixedHMC).
+
 # Introduction
 
-This repo contains code for reproducing the results in the paper [**Mixed Hamiltonian Monte Carlo for Mixed Discrete and Continuous Variables**](https://arxiv.org/abs/1909.04852) at *Neural Information Processing Systems (NeurIPS) 2020*. An alternative implementation is [available within the probabilistic programming language *NumPyro*](http://num.pyro.ai/en/latest/mcmc.html#numpyro.infer.mixed_hmc.MixedHMC).
+This repo contains code for reproducing the results in the paper [**Mixed Hamiltonian Monte Carlo for Mixed Discrete and Continuous Variables**](https://arxiv.org/abs/1909.04852) at *Neural Information Processing Systems (NeurIPS) 2020*. 
 
 # Setting up the environment
 
